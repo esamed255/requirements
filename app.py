@@ -1,3 +1,8 @@
+Your code has a few missing URL parameters in the @app.route decorators where double slashes (//) appear. Flask expects dynamic variable placeholders inside angle brackets like <int:request_id> or <int:pro_id>, so missing those causes a BuildError or route routing failure when trying to redirect or load those pages.
+
+Here is the exact corrected app.py code to replace on GitHub:
+
+Python
 import os
 from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
@@ -124,7 +129,6 @@ def professional_page():
     requests = ClientRequest.query.all()
     return render_template("professional.html", pros=pros, requests=requests)
 
-# Delete Professional Profile Route
 @app.route("/delete_pro/<int:pro_id>", methods=["POST"])
 def delete_pro(pro_id):
     pro = Professional.query.get_or_404(pro_id)
