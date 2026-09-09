@@ -1,77 +1,136 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Professional Portal - Nova</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-  <nav>
-    <div class="logo">Nova Pro</div>
-    <div>
-      <a href="/">Home</a>
-      <a href="/client">Need a Pro</a>
-      <a href="/professional">For Professionals</a>
-    </div>
-  </nav>
+import os
+from flask import Flask, render_template, request, redirect, url_for
+from flask_sqlalchemy import SQLAlchemy
+from geopy.geocoders import Nominatim
+from geopy.distance import geodesic
 
-  <div class="container">
-    <h1>Professional Directory & Registration</h1>
-    
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:2rem; margin-top:2rem;">
-      
-      <!-- Registration Form -->
-      <form method="POST" style="background:var(--card-bg); padding:2rem; border-radius:12px; text-align:left;">
-        <h3 style="margin-top:0;">Create Pro Profile</h3>
+app = Flask(__name__)
+
+# Configure PostgreSQL Database
+db_url = os.environ.get("DATABASE_URL", "sqlite:///local.db")
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = db_url
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+db = SQLAlchemy(app)
+geolocator = Nominatim(user_agent="nova_dispatch_app")
+
+# Database Models
+class ClientRequest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    address = db.Column(db.String(200), nullable=False)
+    details = db.Column(db.Text, nullable=False)
+    lat = db.Column(db.Float, nullable=True)
+    lon = db.Column(db.Float, nullable=True)
+    assigned_pro_id = db.Column(db.Integer, nullable=True)
+    status = db.Column(db.String(50), default="PENDING")
+
+class Professional(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    trade = db.Column(db.String(100), nullable=False)
+    address = db.Column(db.String(200), nullable=False)
+    phone = db.Column(db.String(50), nullable=True, default="")
+    experience = db.Column(db.Integer, nullable=True, default=1)
+    lat = db.Column(db.Float, nullable=True)
+    lon = db.Column(db.Float, nullable=True)
+
+with app.app_context():
+    db.create_all()
+
+def get_coords(address_str):
+    try:
+        location = geolocator.geocode(address_str, timeout=10)
+        if location:
+            return location.latitude, location.longitude
+    except Exception:
+        pass
+    return None, None
+
+@app.route("/")
+def home():
+    return render_template("index.html")
+
+@app.route("/client", methods=["GET", "POST"])
+def client_page():
+    if request.method == "POST":
+        name = request.form.get("name")
+        address = request.form.get("address")
+        details = request.form.get("details")
         
-        <div style="margin-bottom:1rem;">
-          <label style="display:block; margin-bottom:0.5rem;">Full Name / Business Name</label>
-          <input type="text" name="name" placeholder="e.g. Jean Dupont" required style="width:100%; padding:0.75rem; border-radius:6px; border:none;">
-        </div>
+        lat, lon = get_coords(address)
+        
+        if name and address and details:
+            new_request = ClientRequest(name=name, address=address, details=details, lat=lat, lon=lon)
+            db.session.add(new_request)
+            db.session.commit()
+            return redirect(url_for("matches_page", request_id=new_request.id))
+            
+    return render_template("client.html")
 
-        <div style="margin-bottom:1rem;">
-          <label style="display:block; margin-bottom:0.5rem;">What You Can Do (Trade / Skills)</label>
-          <input type="text" name="trade" placeholder="e.g. Heating, HVAC & Plumbing Specialist" required style="width:100%; padding:0.75rem; border-radius:6px; border:none;">
-        </div>
+@app.route("/matches/<int:request_id>")
+def matches_page(request_id):
+    client_req = ClientRequest.query.get_or_404(request_id)
+    all_pros = Professional.query.all()
+    
+    nearby_pros = []
+    for pro in all_pros:
+        dist_km = None
+        if client_req.lat and client_req.lon and pro.lat and pro.lon:
+            dist_km = round(geodesic((client_req.lat, client_req.lon), (pro.lat, pro.lon)).km, 1)
+        
+        nearby_pros.append({
+            "pro": pro,
+            "distance": dist_km if dist_km is not None else "Unknown"
+        })
+    
+    nearby_pros.sort(key=lambda x: x["distance"] if isinstance(x["distance"], (int, float)) else 9999)
+    return render_template("matches.html", client_req=client_req, pros=nearby_pros)
 
-        <div style="margin-bottom:1rem;">
-          <label style="display:block; margin-bottom:0.5rem;">Service Address / Location</label>
-          <input type="text" name="address" placeholder="e.g. Strasbourg, France" required style="width:100%; padding:0.75rem; border-radius:6px; border:none;">
-        </div>
+@app.route("/accept_job/<int:request_id>/<int:pro_id>", methods=["POST"])
+def accept_job(request_id, pro_id):
+    client_req = ClientRequest.query.get_or_404(request_id)
+    client_req.assigned_pro_id = pro_id
+    client_req.status = "ACCEPTED"
+    db.session.commit()
+    return redirect(url_for("tracking_page", request_id=request_id))
 
-        <div style="margin-bottom:1rem;">
-          <label style="display:block; margin-bottom:0.5rem;">Phone Number</label>
-          <input type="text" name="phone" placeholder="e.g. 0612345678" required style="width:100%; padding:0.75rem; border-radius:6px; border:none;">
-        </div>
+@app.route("/tracking/<int:request_id>")
+def tracking_page(request_id):
+    client_req = ClientRequest.query.get_or_404(request_id)
+    pro = Professional.query.get(client_req.assigned_pro_id) if client_req.assigned_pro_id else None
+    return render_template("tracking.html", client_req=client_req, pro=pro)
 
-        <div style="margin-bottom:1.5rem;">
-          <label style="display:block; margin-bottom:0.5rem;">Years of Experience</label>
-          <input type="number" name="experience" value="5" min="1" max="50" required style="width:100%; padding:0.75rem; border-radius:6px; border:none;">
-        </div>
+@app.route("/professional", methods=["GET", "POST"])
+def professional_page():
+    if request.method == "POST":
+        name = request.form.get("name")
+        trade = request.form.get("trade")
+        address = request.form.get("address")
+        
+        lat, lon = get_coords(address)
+        
+        if name and trade and address:
+            new_pro = Professional(name=name, trade=trade, address=address, lat=lat, lon=lon)
+            db.session.add(new_pro)
+            db.session.commit()
+            
+        return redirect(url_for("professional_page"))
+        
+    pros = Professional.query.all()
+    requests = ClientRequest.query.all()
+    return render_template("professional.html", pros=pros, requests=requests)
 
-        <button type="submit" class="btn" style="width:100%; border:none; cursor:pointer; background:#a855f7; color:#fff;">Register Profile</button>
-      </form>
+# Delete Professional Profile Route
+@app.route("/delete_pro/<int:pro_id>", methods=["POST"])
+def delete_pro(pro_id):
+    pro = Professional.query.get_or_404(pro_id)
+    db.session.delete(pro)
+    db.session.commit()
+    return redirect(url_for("professional_page"))
 
-      <!-- Registered Profiles List -->
-      <div style="text-align:left;">
-        <h3 style="margin-top:0;">Registered Professionals</h3>
-        {% if pros %}
-          {% for p in pros %}
-            <div class="card" style="margin-bottom:1rem;">
-              <h3 style="margin:0 0 0.5rem 0; color:var(--accent);">{{ p.name }}</h3>
-              <p style="margin:0 0 0.25rem 0;"><strong>Skills / Trade:</strong> {{ p.trade }}</p>
-              <p style="margin:0 0 0.25rem 0;"><strong>Address:</strong> {{ p.address }}</p>
-              <p style="margin:0 0 0.25rem 0;"><strong>Phone:</strong> {{ p.phone }}</p>
-              <p style="margin:0; color:var(--text-muted);"><strong>Experience:</strong> {{ p.experience }} years</p>
-            </div>
-          {% endfor %}
-        {% else %}
-          <p style="color:var(--text-muted);">No professionals registered yet. Fill out the form to add the first profile!</p>
-        {% endif %}
-      </div>
-
-    </div>
-  </div>
-</body>
-</html>
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
