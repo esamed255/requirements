@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Professional Portal - Nova</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <nav>
+    <div class="logo">Nova</div>
+    <div>
+      <a href="/">Home</a>
+      <a href="/client">Need a Pro</a>
+      <a href="/professional">For Professionals</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h1>Professional Portal</h1>
+    
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:2rem; margin-top:2rem;">
+      <!-- Registration Form -->
+      <form method="POST" style="background:var(--card-bg); padding:2rem; border-radius:12px; text-align:left;">
+        <h3>Register as a Pro</h3>
+        <div style="margin-bottom:1rem;">
+          <label style="display:block; margin-bottom:0.5rem;">Full Name / Company</label>
+          <input type="text" name="name" required style="width:100%; padding:0.75rem; border-radius:6px; border:none;">
+        </div>
+        <div style="margin-bottom:1rem;">
+          <label style="display:block; margin-bottom:0.5rem;">Trade / Work You Can Do</label>
+          <input type="text" name="trade" placeholder="e.g. Plumbing, HVAC, Electrical" required style="width:100%; padding:0.75rem; border-radius:6px; border:none;">
+        </div>
+        <div style="margin-bottom:1rem;">
+          <label style="display:block; margin-bottom:0.5rem;">Address / Service Area</label>
+          <input type="text" name="address" required style="width:100%; padding:0.75rem; border-radius:6px; border:none;">
+        </div>
+        <button type="submit" class="btn" style="width:100%; border:none; cursor:pointer; background:#a855f7; color:#fff;">Register Pro Profile</button>
+      </form>
+
+      <!-- Open Job Requests List -->
+      <div style="text-align:left;">
+        <h3>Available Requests</h3>
+        {% if requests %}
+          {% for req in requests %}
+            <div class="card" style="margin-bottom:1rem;">
+              <h4 style="margin:0 0 0.5rem 0; color:var(--accent);">{{ req.name }}</h4>
+              <p style="margin:0 0 0.5rem 0;"><strong>Location:</strong> {{ req.address }}</p>
+              <p style="margin:0; color:var(--text-muted);"><strong>Request:</strong> {{ req.details }}</p>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p style="color:var(--text-muted);">No active client requests at the moment.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</body>
+</html>
