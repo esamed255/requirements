@@ -2,9 +2,9 @@ from flask import Flask, render_template, request, redirect, url_for
 
 app = Flask(__name__)
 
-# Temporary in-memory databases (resets when app restarts)
+# Temporary databases (resets when the app restarts)
 client_requests = []
-professionals = []
+registered_pros = []
 
 @app.route("/")
 def home():
@@ -35,14 +35,14 @@ def professional_page():
         address = request.form.get("address")
         
         if name and trade and address:
-            professionals.append({
+            registered_pros.append({
                 "name": name,
                 "trade": trade,
                 "address": address
             })
         return redirect(url_for("professional_page"))
         
-    return render_template("professional.html", professionals=professionals, requests=client_requests)
+    return render_template("professional.html", pros=registered_pros, requests=client_requests)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
