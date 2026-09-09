@@ -11,23 +11,27 @@
   </nav>
 
   <div class="container">
-    <h1>Recommended Professionals Near You</h1>
-    <p>Emergency Request: <strong>{{ client_req.details }}</strong></p>
+    <h1>Recommended Specialists Near You</h1>
+    
+    <div class="card" style="margin-bottom: 2rem; background: #1e293b; border-left: 4px solid #a855f7;">
+      <p style="margin: 0 0 0.5rem 0;">Emergency Issue: <strong>{{ client_req.details }}</strong></p>
+      <p style="margin: 0; color: #a855f7;">AI Detected Category: <strong>{{ client_req.detected_trade or 'General' }}</strong></p>
+    </div>
 
-    <div style="margin-top:2rem;">
+    <div>
       {% for item in pros %}
         <div class="card" style="margin-bottom:1.5rem; display:flex; justify-content:space-between; align-items:center;">
           <div>
             <h3 style="margin:0; color:var(--accent);">{{ item.pro.name }}</h3>
-            <p style="margin:0.25rem 0;">Trade: {{ item.pro.trade }} | Experience: {{ item.pro.experience }} years</p>
-            <p style="margin:0; color:var(--text-muted);">Location: {{ item.pro.address }} (<strong>{{ item.distance }} km away</strong>)</p>
+            <p style="margin:0.25rem 0;"><strong>Trade:</strong> {{ item.pro.trade }}</p>
+            <p style="margin:0; color:var(--text-muted);"><strong>Address:</strong> {{ item.pro.address }} (<strong>{{ item.distance }} km away</strong>)</p>
           </div>
           <form action="/accept_job/{{ client_req.id }}/{{ item.pro.id }}" method="POST">
             <button type="submit" class="btn" style="background:#22c55e; color:#fff; border:none; cursor:pointer;">Request This Pro</button>
           </form>
         </div>
       {% else %}
-        <p>No professionals registered yet.</p>
+        <p>No professionals available for this trade yet.</p>
       {% endfor %}
     </div>
   </div>
