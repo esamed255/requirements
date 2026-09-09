@@ -26,7 +26,10 @@ ai_client = genai.Client(api_key=gemini_key) if gemini_key else None
 class ClientRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
+    city = db.Column(db.String(100), nullable=False, default="")
     address = db.Column(db.String(200), nullable=False)
+    email = db.Column(db.String(120), nullable=False, default="")
+    phone = db.Column(db.String(50), nullable=False, default="")
     details = db.Column(db.Text, nullable=False)
     detected_trade = db.Column(db.String(100), nullable=True)
     lat = db.Column(db.Float, nullable=True)
@@ -38,9 +41,11 @@ class Professional(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     trade = db.Column(db.String(100), nullable=False)
+    skills = db.Column(db.String(200), nullable=True, default="")
+    city = db.Column(db.String(100), nullable=False, default="")
     address = db.Column(db.String(200), nullable=False)
-    phone = db.Column(db.String(50), nullable=True, default="")
-    experience = db.Column(db.Integer, nullable=True, default=1)
+    email = db.Column(db.String(120), nullable=False, default="")
+    phone = db.Column(db.String(50), nullable=False, default="")
     lat = db.Column(db.Float, nullable=True)
     lon = db.Column(db.Float, nullable=True)
 
@@ -48,15 +53,16 @@ with app.app_context():
     db.create_all()
 
 def classify_trade_with_ai(problem_description):
-    """Uses Gemini to identify the exact trade required from a description."""
+    """Uses Gemini to identify trade. Returns None if unclassifiable/unmatched."""
     if not ai_client:
-        return "General"
+        return None
     
     prompt = (
         "You are an emergency dispatch AI. Read this client issue description and classify "
         "the single most relevant trade required from these exact options: "
-        "['Electrician', 'Plumber', 'Locksmith', 'HVAC / Heating']. "
-        "Respond ONLY with the exact trade name string and nothing else.\n\n"
+        "['Plumber', 'Electrician', 'Locksmith', 'HVAC / Heating']. "
+        "If the issue does not clearly fit any of these categories, respond strictly with 'NONE'. "
+        "Respond ONLY with the exact trade name or 'NONE'.\n\n"
         f"Client issue: {problem_description}"
     )
     
@@ -66,17 +72,17 @@ def classify_trade_with_ai(problem_description):
             contents=prompt,
         )
         trade = response.text.strip()
-        allowed_trades = ["Electrician", "Plumber", "Locksmith", "HVAC / Heating"]
+        allowed_trades = ["Plumber", "Electrician", "Locksmith", "HVAC / Heating"]
         for allowed in allowed_trades:
             if allowed.lower() in trade.lower():
                 return allowed
-        return "General"
+        return None
     except Exception:
-        return "General"
+        return None
 
-def get_coords(address_str):
+def get_coords(full_address_str):
     try:
-        location = geolocator.geocode(address_str, timeout=10)
+        location = geolocator.geocode(full_address_str, timeout=10)
         if location:
             return location.latitude, location.longitude
     except Exception:
@@ -91,16 +97,23 @@ def home():
 def client_page():
     if request.method == "POST":
         name = request.form.get("name")
+        city = request.form.get("city")
         address = request.form.get("address")
+        email = request.form.get("email")
+        phone = request.form.get("phone")
         details = request.form.get("details")
         
-        lat, lon = get_coords(address)
+        full_addr = f"{address}, {city}"
+        lat, lon = get_coords(full_addr)
         detected_trade = classify_trade_with_ai(details)
         
         if name and address and details:
             new_request = ClientRequest(
                 name=name, 
+                city=city,
                 address=address, 
+                email=email,
+                phone=phone,
                 details=details, 
                 detected_trade=detected_trade,
                 lat=lat, 
@@ -116,12 +129,10 @@ def client_page():
 def matches_page(request_id):
     client_req = ClientRequest.query.get_or_404(request_id)
     
-    if client_req.detected_trade and client_req.detected_trade != "General":
+    # Strict matching rule: If trade not recognized or no pros exist for trade, return empty
+    matching_pros = []
+    if client_req.detected_trade:
         matching_pros = Professional.query.filter_by(trade=client_req.detected_trade).all()
-        if not matching_pros:
-            matching_pros = Professional.query.all()
-    else:
-        matching_pros = Professional.query.all()
     
     nearby_pros = []
     for pro in matching_pros:
@@ -156,12 +167,27 @@ def professional_page():
     if request.method == "POST":
         name = request.form.get("name")
         trade = request.form.get("trade")
+        skills = request.form.get("skills")
+        city = request.form.get("city")
         address = request.form.get("address")
+        email = request.form.get("email")
+        phone = request.form.get("phone")
         
-        lat, lon = get_coords(address)
+        full_addr = f"{address}, {city}"
+        lat, lon = get_coords(full_addr)
         
         if name and trade and address:
-            new_pro = Professional(name=name, trade=trade, address=address, lat=lat, lon=lon)
+            new_pro = Professional(
+                name=name, 
+                trade=trade, 
+                skills=skills,
+                city=city,
+                address=address, 
+                email=email,
+                phone=phone,
+                lat=lat, 
+                lon=lon
+            )
             db.session.add(new_pro)
             db.session.commit()
             
