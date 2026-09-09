@@ -1,18 +1,48 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, redirect, url_for
 
 app = Flask(__name__)
+
+# Temporary in-memory databases (resets when app restarts)
+client_requests = []
+professionals = []
 
 @app.route("/")
 def home():
     return render_template("index.html")
 
-@app.route("/about")
-def about():
-    return render_template("about.html")
+@app.route("/client", methods=["GET", "POST"])
+def client_page():
+    if request.method == "POST":
+        name = request.form.get("name")
+        address = request.form.get("address")
+        details = request.form.get("details")
+        
+        if name and address and details:
+            client_requests.append({
+                "name": name,
+                "address": address,
+                "details": details
+            })
+        return redirect(url_for("client_page"))
+        
+    return render_template("client.html", requests=client_requests)
 
-@app.route("/contact")
-def contact():
-    return render_template("contact.html")
+@app.route("/professional", methods=["GET", "POST"])
+def professional_page():
+    if request.method == "POST":
+        name = request.form.get("name")
+        trade = request.form.get("trade")
+        address = request.form.get("address")
+        
+        if name and trade and address:
+            professionals.append({
+                "name": name,
+                "trade": trade,
+                "address": address
+            })
+        return redirect(url_for("professional_page"))
+        
+    return render_template("professional.html", professionals=professionals, requests=client_requests)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
