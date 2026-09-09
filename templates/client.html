@@ -2,13 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Request a Service - Nova</title>
+  <title>Need a Pro - Nova Emergency</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
   <nav>
-    <div class="logo">Nova</div>
+    <div class="logo">Nova Emergency</div>
     <div>
       <a href="/">Home</a>
       <a href="/client">Need a Pro</a>
@@ -16,24 +15,34 @@
     </div>
   </nav>
 
-  <div class="container">
-    <h1>Request a Professional</h1>
-    <p>Submit your service request or emergency below.</p>
-
-    <form method="POST" style="background:var(--card-bg); padding:2rem; border-radius:12px; text-align:left; max-width:500px; margin:2rem auto;">
-      <div style="margin-bottom:1rem;">
-        <label style="display:block; margin-bottom:0.5rem;">Your Name</label>
-        <input type="text" name="name" required style="width:100%; padding:0.75rem; border-radius:6px; border:none;">
+  <div class="container" style="max-width: 600px;">
+    <h1>Request Emergency Assistance</h1>
+    <form method="POST" class="card" style="text-align: left; background: var(--card-bg); padding: 2rem;">
+      <div style="margin-bottom: 1rem;">
+        <label>Your Name</label>
+        <input type="text" name="name" required style="width:100%; padding:0.75rem; border-radius:6px; border:none; margin-top:0.25rem;">
       </div>
-      <div style="margin-bottom:1rem;">
-        <label style="display:block; margin-bottom:0.5rem;">Address</label>
-        <input type="text" name="address" required style="width:100%; padding:0.75rem; border-radius:6px; border:none;">
+      <div style="margin-bottom: 1rem;">
+        <label>City</label>
+        <input type="text" name="city" placeholder="e.g. Strasbourg" required style="width:100%; padding:0.75rem; border-radius:6px; border:none; margin-top:0.25rem;">
       </div>
-      <div style="margin-bottom:1rem;">
-        <label style="display:block; margin-bottom:0.5rem;">Describe what you need / Emergency details</label>
-        <textarea name="details" rows="4" required style="width:100%; padding:0.75rem; border-radius:6px; border:none;"></textarea>
+      <div style="margin-bottom: 1rem;">
+        <label>Street Address</label>
+        <input type="text" name="address" placeholder="e.g. 15 Place de la Cathédrale" required style="width:100%; padding:0.75rem; border-radius:6px; border:none; margin-top:0.25rem;">
       </div>
-      <button type="submit" class="btn" style="width:100%; border:none; cursor:pointer;">Submit Request</button>
+      <div style="margin-bottom: 1rem;">
+        <label>Email Address</label>
+        <input type="email" name="email" required style="width:100%; padding:0.75rem; border-radius:6px; border:none; margin-top:0.25rem;">
+      </div>
+      <div style="margin-bottom: 1rem;">
+        <label>Phone Number</label>
+        <input type="text" name="phone" required style="width:100%; padding:0.75rem; border-radius:6px; border:none; margin-top:0.25rem;">
+      </div>
+      <div style="margin-bottom: 1.5rem;">
+        <label>Description of What You Need</label>
+        <textarea name="details" rows="4" placeholder="Describe your emergency..." required style="width:100%; padding:0.75rem; border-radius:6px; border:none; margin-top:0.25rem;"></textarea>
+      </div>
+      <button type="submit" class="btn" style="width: 100%; border: none; cursor: pointer; background: var(--accent); color: #fff;">Find Emergency Pro</button>
     </form>
   </div>
 </body>
