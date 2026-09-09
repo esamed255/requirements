@@ -1,13 +1,9 @@
-Your code has a few missing URL parameters in the @app.route decorators where double slashes (//) appear. Flask expects dynamic variable placeholders inside angle brackets like <int:request_id> or <int:pro_id>, so missing those causes a BuildError or route routing failure when trying to redirect or load those pages.
-
-Here is the exact corrected app.py code to replace on GitHub:
-
-Python
 import os
 from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
+from google import genai
 
 app = Flask(__name__)
 
@@ -22,12 +18,17 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 geolocator = Nominatim(user_agent="nova_dispatch_app")
 
+# Initialize Gemini Client
+gemini_key = os.environ.get("GEMINI_API_KEY")
+ai_client = genai.Client(api_key=gemini_key) if gemini_key else None
+
 # Database Models
 class ClientRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     address = db.Column(db.String(200), nullable=False)
     details = db.Column(db.Text, nullable=False)
+    detected_trade = db.Column(db.String(100), nullable=True)
     lat = db.Column(db.Float, nullable=True)
     lon = db.Column(db.Float, nullable=True)
     assigned_pro_id = db.Column(db.Integer, nullable=True)
@@ -45,6 +46,33 @@ class Professional(db.Model):
 
 with app.app_context():
     db.create_all()
+
+def classify_trade_with_ai(problem_description):
+    """Uses Gemini to identify the exact trade required from a description."""
+    if not ai_client:
+        return "General"
+    
+    prompt = (
+        "You are an emergency dispatch AI. Read this client issue description and classify "
+        "the single most relevant trade required from these exact options: "
+        "['Electrician', 'Plumber', 'Locksmith', 'HVAC / Heating']. "
+        "Respond ONLY with the exact trade name string and nothing else.\n\n"
+        f"Client issue: {problem_description}"
+    )
+    
+    try:
+        response = ai_client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+        )
+        trade = response.text.strip()
+        allowed_trades = ["Electrician", "Plumber", "Locksmith", "HVAC / Heating"]
+        for allowed in allowed_trades:
+            if allowed.lower() in trade.lower():
+                return allowed
+        return "General"
+    except Exception:
+        return "General"
 
 def get_coords(address_str):
     try:
@@ -67,9 +95,17 @@ def client_page():
         details = request.form.get("details")
         
         lat, lon = get_coords(address)
+        detected_trade = classify_trade_with_ai(details)
         
         if name and address and details:
-            new_request = ClientRequest(name=name, address=address, details=details, lat=lat, lon=lon)
+            new_request = ClientRequest(
+                name=name, 
+                address=address, 
+                details=details, 
+                detected_trade=detected_trade,
+                lat=lat, 
+                lon=lon
+            )
             db.session.add(new_request)
             db.session.commit()
             return redirect(url_for("matches_page", request_id=new_request.id))
@@ -79,10 +115,16 @@ def client_page():
 @app.route("/matches/<int:request_id>")
 def matches_page(request_id):
     client_req = ClientRequest.query.get_or_404(request_id)
-    all_pros = Professional.query.all()
+    
+    if client_req.detected_trade and client_req.detected_trade != "General":
+        matching_pros = Professional.query.filter_by(trade=client_req.detected_trade).all()
+        if not matching_pros:
+            matching_pros = Professional.query.all()
+    else:
+        matching_pros = Professional.query.all()
     
     nearby_pros = []
-    for pro in all_pros:
+    for pro in matching_pros:
         dist_km = None
         if client_req.lat and client_req.lon and pro.lat and pro.lon:
             dist_km = round(geodesic((client_req.lat, client_req.lon), (pro.lat, pro.lon)).km, 1)
