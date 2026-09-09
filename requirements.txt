@@ -3,3 +3,4 @@ gunicorn
 flask_sqlalchemy
 psycopg2-binary
 geopy
+google-genai
