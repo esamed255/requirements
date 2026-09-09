@@ -26,15 +26,15 @@ class ClientRequest(db.Model):
     lat = db.Column(db.Float, nullable=True)
     lon = db.Column(db.Float, nullable=True)
     assigned_pro_id = db.Column(db.Integer, nullable=True)
-    status = db.Column(db.String(50), default="PENDING")  # PENDING, ACCEPTED
+    status = db.Column(db.String(50), default="PENDING")
 
 class Professional(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     trade = db.Column(db.String(100), nullable=False)
     address = db.Column(db.String(200), nullable=False)
-    phone = db.Column(db.String(50), nullable=False, default="0600000000")
-    experience = db.Column(db.Integer, nullable=False, default=5)
+    phone = db.Column(db.String(50), nullable=True, default="")
+    experience = db.Column(db.Integer, nullable=True, default=1)
     lat = db.Column(db.Float, nullable=True)
     lon = db.Column(db.Float, nullable=True)
 
@@ -87,9 +87,7 @@ def matches_page(request_id):
             "distance": dist_km if dist_km is not None else "Unknown"
         })
     
-    # Sort by nearest distance
     nearby_pros.sort(key=lambda x: x["distance"] if isinstance(x["distance"], (int, float)) else 9999)
-    
     return render_template("matches.html", client_req=client_req, pros=nearby_pros)
 
 @app.route("/accept_job/<int:request_id>/<int:pro_id>", methods=["POST"])
@@ -112,13 +110,11 @@ def professional_page():
         name = request.form.get("name")
         trade = request.form.get("trade")
         address = request.form.get("address")
-        phone = request.form.get("phone", "0600000000")
-        exp = int(request.form.get("experience", 5))
         
         lat, lon = get_coords(address)
         
         if name and trade and address:
-            new_pro = Professional(name=name, trade=trade, address=address, phone=phone, experience=exp, lat=lat, lon=lon)
+            new_pro = Professional(name=name, trade=trade, address=address, lat=lat, lon=lon)
             db.session.add(new_pro)
             db.session.commit()
             
@@ -127,6 +123,14 @@ def professional_page():
     pros = Professional.query.all()
     requests = ClientRequest.query.all()
     return render_template("professional.html", pros=pros, requests=requests)
+
+# Delete Professional Profile Route
+@app.route("/delete_pro/<int:pro_id>", methods=["POST"])
+def delete_pro(pro_id):
+    pro = Professional.query.get_or_404(pro_id)
+    db.session.delete(pro)
+    db.session.commit()
+    return redirect(url_for("professional_page"))
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
