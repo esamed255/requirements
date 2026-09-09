@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Available Professionals - Nova</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <nav>
+    <div class="logo">Nova Emergency</div>
+  </nav>
+
+  <div class="container">
+    <h1>Recommended Professionals Near You</h1>
+    <p>Emergency Request: <strong>{{ client_req.details }}</strong></p>
+
+    <div style="margin-top:2rem;">
+      {% for item in pros %}
+        <div class="card" style="margin-bottom:1.5rem; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <h3 style="margin:0; color:var(--accent);">{{ item.pro.name }}</h3>
+            <p style="margin:0.25rem 0;">Trade: {{ item.pro.trade }} | Experience: {{ item.pro.experience }} years</p>
+            <p style="margin:0; color:var(--text-muted);">Location: {{ item.pro.address }} (<strong>{{ item.distance }} km away</strong>)</p>
+          </div>
+          <form action="/accept_job/{{ client_req.id }}/{{ item.pro.id }}" method="POST">
+            <button type="submit" class="btn" style="background:#22c55e; color:#fff; border:none; cursor:pointer;">Request This Pro</button>
+          </form>
+        </div>
+      {% else %}
+        <p>No professionals registered yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+</body>
+</html>
