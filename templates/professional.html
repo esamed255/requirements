@@ -8,7 +8,7 @@
 </head>
 <body>
   <nav>
-    <div class="logo">Nova</div>
+    <div class="logo">Nova Pro</div>
     <div>
       <a href="/">Home</a>
       <a href="/client">Need a Pro</a>
@@ -17,42 +17,60 @@
   </nav>
 
   <div class="container">
-    <h1>Professional Portal</h1>
+    <h1>Professional Directory & Registration</h1>
     
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:2rem; margin-top:2rem;">
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:2rem; margin-top:2rem;">
+      
       <!-- Registration Form -->
       <form method="POST" style="background:var(--card-bg); padding:2rem; border-radius:12px; text-align:left;">
-        <h3>Register as a Pro</h3>
+        <h3 style="margin-top:0;">Create Pro Profile</h3>
+        
         <div style="margin-bottom:1rem;">
-          <label style="display:block; margin-bottom:0.5rem;">Full Name / Company</label>
-          <input type="text" name="name" required style="width:100%; padding:0.75rem; border-radius:6px; border:none;">
+          <label style="display:block; margin-bottom:0.5rem;">Full Name / Business Name</label>
+          <input type="text" name="name" placeholder="e.g. Jean Dupont" required style="width:100%; padding:0.75rem; border-radius:6px; border:none;">
         </div>
+
         <div style="margin-bottom:1rem;">
-          <label style="display:block; margin-bottom:0.5rem;">Trade / Work You Can Do</label>
-          <input type="text" name="trade" placeholder="e.g. Plumbing, HVAC, Electrical" required style="width:100%; padding:0.75rem; border-radius:6px; border:none;">
+          <label style="display:block; margin-bottom:0.5rem;">What You Can Do (Trade / Skills)</label>
+          <input type="text" name="trade" placeholder="e.g. Heating, HVAC & Plumbing Specialist" required style="width:100%; padding:0.75rem; border-radius:6px; border:none;">
         </div>
+
         <div style="margin-bottom:1rem;">
-          <label style="display:block; margin-bottom:0.5rem;">Address / Service Area</label>
-          <input type="text" name="address" required style="width:100%; padding:0.75rem; border-radius:6px; border:none;">
+          <label style="display:block; margin-bottom:0.5rem;">Service Address / Location</label>
+          <input type="text" name="address" placeholder="e.g. Strasbourg, France" required style="width:100%; padding:0.75rem; border-radius:6px; border:none;">
         </div>
-        <button type="submit" class="btn" style="width:100%; border:none; cursor:pointer; background:#a855f7; color:#fff;">Register Pro Profile</button>
+
+        <div style="margin-bottom:1rem;">
+          <label style="display:block; margin-bottom:0.5rem;">Phone Number</label>
+          <input type="text" name="phone" placeholder="e.g. 0612345678" required style="width:100%; padding:0.75rem; border-radius:6px; border:none;">
+        </div>
+
+        <div style="margin-bottom:1.5rem;">
+          <label style="display:block; margin-bottom:0.5rem;">Years of Experience</label>
+          <input type="number" name="experience" value="5" min="1" max="50" required style="width:100%; padding:0.75rem; border-radius:6px; border:none;">
+        </div>
+
+        <button type="submit" class="btn" style="width:100%; border:none; cursor:pointer; background:#a855f7; color:#fff;">Register Profile</button>
       </form>
 
-      <!-- Open Job Requests List -->
+      <!-- Registered Profiles List -->
       <div style="text-align:left;">
-        <h3>Available Requests</h3>
-        {% if requests %}
-          {% for req in requests %}
+        <h3 style="margin-top:0;">Registered Professionals</h3>
+        {% if pros %}
+          {% for p in pros %}
             <div class="card" style="margin-bottom:1rem;">
-              <h4 style="margin:0 0 0.5rem 0; color:var(--accent);">{{ req.name }}</h4>
-              <p style="margin:0 0 0.5rem 0;"><strong>Location:</strong> {{ req.address }}</p>
-              <p style="margin:0; color:var(--text-muted);"><strong>Request:</strong> {{ req.details }}</p>
+              <h3 style="margin:0 0 0.5rem 0; color:var(--accent);">{{ p.name }}</h3>
+              <p style="margin:0 0 0.25rem 0;"><strong>Skills / Trade:</strong> {{ p.trade }}</p>
+              <p style="margin:0 0 0.25rem 0;"><strong>Address:</strong> {{ p.address }}</p>
+              <p style="margin:0 0 0.25rem 0;"><strong>Phone:</strong> {{ p.phone }}</p>
+              <p style="margin:0; color:var(--text-muted);"><strong>Experience:</strong> {{ p.experience }} years</p>
             </div>
           {% endfor %}
         {% else %}
-          <p style="color:var(--text-muted);">No active client requests at the moment.</p>
+          <p style="color:var(--text-muted);">No professionals registered yet. Fill out the form to add the first profile!</p>
         {% endif %}
       </div>
+
     </div>
   </div>
 </body>
