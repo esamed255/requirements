@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Request a Service - Nova</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <nav>
+    <div class="logo">Nova</div>
+    <div>
+      <a href="/">Home</a>
+      <a href="/client">Need a Pro</a>
+      <a href="/professional">For Professionals</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h1>Request a Professional</h1>
+    <p>Submit your service request or emergency below.</p>
+
+    <form method="POST" style="background:var(--card-bg); padding:2rem; border-radius:12px; text-align:left; max-width:500px; margin:2rem auto;">
+      <div style="margin-bottom:1rem;">
+        <label style="display:block; margin-bottom:0.5rem;">Your Name</label>
+        <input type="text" name="name" required style="width:100%; padding:0.75rem; border-radius:6px; border:none;">
+      </div>
+      <div style="margin-bottom:1rem;">
+        <label style="display:block; margin-bottom:0.5rem;">Address</label>
+        <input type="text" name="address" required style="width:100%; padding:0.75rem; border-radius:6px; border:none;">
+      </div>
+      <div style="margin-bottom:1rem;">
+        <label style="display:block; margin-bottom:0.5rem;">Describe what you need / Emergency details</label>
+        <textarea name="details" rows="4" required style="width:100%; padding:0.75rem; border-radius:6px; border:none;"></textarea>
+      </div>
+      <button type="submit" class="btn" style="width:100%; border:none; cursor:pointer;">Submit Request</button>
+    </form>
+  </div>
+</body>
+</html>
