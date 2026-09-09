@@ -49,7 +49,7 @@
         <button type="submit" class="btn" style="width:100%; border:none; cursor:pointer; background:#a855f7; color:#fff;">Register Profile</button>
       </form>
 
-      <!-- Registered Profiles List with Delete Button -->
+      <!-- Registered Profiles List with Correct Delete Route -->
       <div style="text-align:left;">
         <h3 style="margin-top:0;">Registered Professionals</h3>
         {% if pros %}
@@ -60,7 +60,7 @@
                 <p style="margin:0 0 0.25rem 0;"><strong>Trade:</strong> {{ p.trade }}</p>
                 <p style="margin:0; color:var(--text-muted);"><strong>Address:</strong> {{ p.address }}</p>
               </div>
-              <form action="/delete_pro/{{ p.id }}" method="POST" onsubmit="return confirm('Delete this profile?');">
+              <form action="{{ url_for('delete_pro', pro_id=p.id) }}" method="POST" onsubmit="return confirm('Delete this profile?');">
                 <button type="submit" class="btn" style="background:#ef4444; color:#fff; border:none; cursor:pointer; padding:0.5rem 1rem;">Delete</button>
               </form>
             </div>
